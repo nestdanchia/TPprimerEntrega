@@ -12,6 +12,18 @@ Para usar la aplicacion solo hace falta abrir el Frontend en el navegador. No se
 
 ---
 
+## Sistema de fallback
+
+La aplicacion esta disenada para funcionar incluso sin conexion a internet completa o cuando los servicios externos no responden.
+
+Carga de productos: el origen principal es MockAPI (base de datos REST en la nube). Si MockAPI no responde, la aplicacion carga automaticamente un archivo JSON local incluido en el proyecto (public/data/productos.json), sin mostrar ningun error al usuario.
+
+Imagenes: cuando los productos vienen de MockAPI, las imagenes se cargan desde Pexels segun la categoria del producto. Si se activa el fallback al JSON local, las imagenes tambien son locales (archivos carrito1.png a carrito15.png incluidos en el proyecto). Ademas, si una imagen de Pexels falla individualmente al cargar, el componente Item la reemplaza en ese momento por una imagen local aleatoria de las mismas 15 disponibles localmente definidas en ITem
+
+En ningun caso la aplicacion queda sin productos ni sin imagenes.
+
+---
+
 ## Funcionalidades
 
 - Catalogo de productos — listado con imagenes, precios y stock
@@ -53,4 +65,4 @@ npm run dev
 npm run server
 ```
 
-Para correrlo localmente se necesita un archivo .env con las variables de entorno (API keys). Estas no se suben al repositorio por seguridad.
+El backend requiere un archivo .env con la clave de la API de IA (OPENROUTER_API_KEY). El frontend no necesita ninguna configuracion adicional para correr localmente.
