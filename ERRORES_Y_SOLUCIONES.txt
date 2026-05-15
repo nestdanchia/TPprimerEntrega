@@ -1,0 +1,467 @@
+main.jsx
+  └── BrowserRouter
+        └── App.jsx
+              └── CartProvider  ← estado global del carrito
+                    └── Routes
+                          └── Layout  ← shell: Header + Outlet + Footer
+                                ├── /              → ItemListConteinerNew
+                                │     └── Item × N
+                                ├── /carrito       → Carrito
+                                ├── /chat          → ChatIA
+                                ├── /alta          → FormularioContainer
+                                │     └── FormularioProducto (hijo presentacional)
+                                └── /producto/:id  → ProductoDetalle
+
+
+
+
+Responsabilidad de cada componente
+CartContext.jsx — solo crea el canal (createContext()). No tiene estado ni lógica.
+
+CartProvider.jsx — administra el estado real del carrito (carrito[], agregarAlCarrito). Envuelve toda la app para que cualquier componente pueda consumirlo.
+
+Layout.jsx — shell de página. Renderiza Header → <Outlet> (donde van las rutas) → Footer. No tiene estado.
+
+Header.jsx — logo + título + Navbar. Solo presentacional.
+
+Navbar.jsx — links de navegación a las 4 rutas. Solo presentacional.
+
+Footer.jsx — copyright. Solo presentacional.
+
+ItemListConteinerNew.jsx — orquestador de la tienda. Llama a obtenerProductos(), maneja estados de carga/error, crea los callbacks de compra y renderiza la grilla de <Item>.
+
+cargaProductos.jsx — servicio de datos. Intenta MockAPI, si falla cae al JSON local. Asigna imágenes por categoría. El componente no sabe de dónde vienen los datos.
+
+constans.jsx — solo exporta URL_API. Una constante.
+
+Item.jsx — tarjeta de producto. Maneja su propio contador de cantidad (estado local). Cuando el usuario hace clic en "Comprar", llama onCompra(cantidad) que viene del padre como prop.
+
+Carrito.jsx — lee carrito[] del contexto y muestra los items con el total calculado.
+
+FormularioContainer.jsx (alta.jsx) — maneja el estado del formulario y hace POST a MockAPI. Su hijo FormularioProducto es puramente presentacional.
+
+ChatIA.jsx — chat con IA. Hace POST a http://localhost:3001/chat (el servidor Express). Detecta intención de compra y muestra un formulario de contacto.
+
+server.js — servidor Express independiente (puerto 3001). Recibe mensajes del chat y los reenvía a OpenRouter (Llama 3).
+
+ProductoDetalle.jsx — lee el id de la URL con useParams(). Por ahora solo muestra el ID, no carga datos del producto.
+
+Comunicación entre componentes
+Contexto (CartContext): ItemListConteinerNew escribe via agregarAlCarrito. Carrito lee via carrito[]. Comunicación sin prop drilling.
+Props hacia abajo: ItemListConteinerNew → Item (datos del producto + callback onCompra). FormularioContainer → FormularioProducto (datos del form + handlers).
+Callbacks hacia arriba: Item llama onCompra(cantidad) → sube al padre que actualiza el carrito global y el stock local.
+React Router: App define las rutas, Layout usa <Outlet> para renderizar la ruta activa. Navbar navega con <Link>.
+Fetch externo: cargaProductos → MockAPI / JSON local. ChatIA → localhost:3001. alta.jsx → MockAPI (POST).
+Archivos y carpetas que NO se están usando
+Archivos activos pero con código muerto interno:
+
+historial en ItemListConteinerNew y ItemListContainer — el estado existe pero nunca se popula
+Botón "Finalizar compra" en Carrito.jsx — no tiene handler
+ProductoDetalle.jsx — está en el router pero es un stub, no carga datos reales
+_diccionarioImagen en cargaProductos.jsx — se calcula pero nunca se usa (tiene el prefijo _ que lo indica)
+Archivos completamente sin uso en la app activa:
+
+gemini.js
+ — exporta model pero ningún componente lo importa. El chat usa el servidor Express, no Gemini directo
+VITE_GEMINI_API_KEY en .env — definida pero no leída en ningún archivo
+ItemListContainer.jsx
+ — versión legacy, reemplazada por ItemListConteinerNew.jsx. No está importada en ningún lado
+practica.jsx (raíz del proyecto) — archivo de práctica/aprendizaje. Estaba en el App.jsx comentado pero no en la versión activa
+vite.svg
+ — no se usa en ningún componente activo
+Imágenes en /public:
+
+carrito.png (sin número) — las que se usan son carrito1.png a carrito15.png. Esta podría ser un sobrante
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sí, ya estás en el punto donde conviene empezar a separar responsabilidades.
+Ahora mismo tu ItemListContainer hace demasiadas cosas juntas:
+
+
+fetch GET
+
+
+transformación de imágenes
+
+
+manejo de loading/error
+
+
+lógica de stock
+
+
+render UI
+
+
+URLs
+
+
+lógica de negocio
+
+
+Funciona, pero cuando agregues:
+
+
+POST
+
+
+PUT
+
+
+DELETE
+
+
+Router
+
+
+filtros
+
+
+carrito
+
+
+edición
+
+
+ese archivo va a explotar en tamaño.
+La estructura más razonable para lo que estás haciendo ahora sería algo así:
+src/│├── components/│   ├── Item/│   │   ├── Item.jsx│   │   └── Item.module.css│   ││   ├── ItemListContainer/│   │   ├── ItemListContainer.jsx│   │   └── ItemListContainer.module.css│   ││   ├── FormularioProducto/│   │   ├── FormularioProducto.jsx│   │   └── FormularioProducto.module.css│├── services/│   └── productosService.js│├── utils/│   └── imagenes.js│├── hooks/│   └── useProductos.js│├── pages/│   ├── Home.jsx│   ├── Productos.jsx│   └── NuevoProducto.jsx│├── router/│   └── AppRouter.jsx│├── App.jsx└── main.jsx
+Y la clave acá es esta parte:
+1. services/
+Acá ponés TODA la comunicación HTTP con MockAPI.
+Ejemplo:
+// services/productosService.jsconst URL_API =  "https://6a025e4b0d92f63dd2539b82.mockapi.io/api/v1/productos";export const obtenerProductos = async () => {  const response = await fetch(URL_API);  if (!response.ok) {    throw new Error("Error al obtener productos");  }  return response.json();};export const crearProducto = async (producto) => {  const response = await fetch(URL_API, {    method: "POST",    headers: {      "Content-Type": "application/json",    },    body: JSON.stringify(producto),  });  if (!response.ok) {    throw new Error("Error al crear producto");  }  return response.json();};export const actualizarProducto = async (id, datos) => {  const response = await fetch(`${URL_API}/${id}`, {    method: "PUT",    headers: {      "Content-Type": "application/json",    },    body: JSON.stringify(datos),  });  return response.json();};export const eliminarProducto = async (id) => {  await fetch(`${URL_API}/${id}`, {    method: "DELETE",  });};
+Entonces el componente deja de conocer fetch.
+Tu componente pasa a decir:
+const data = await obtenerProductos();
+y nada más.
+Eso es MUCHO más profesional.
+
+2. utils/
+Acá va todo lo reutilizable que NO es React.
+Tu diccionario de imágenes encaja perfecto ahí.
+// utils/imagenes.jsexport const diccionarioImagen = {  computacion: "laptop",  accesorios: "keyboard",};
+y también:
+export const generarImagen = (categoria, index) => {  const termino = diccionarioImagen[categoria] || "technology";  return `https://loremflickr.com/300/200/${termino}?lock=${index + 1}`;};
+Entonces en el componente hacés:
+imagen: generarImagen(p.categoria, i)
+
+3. hooks/
+Esto todavía no es obligatorio, pero después sí.
+Tu lógica de:
+
+
+loading
+
+
+error
+
+
+fetch
+
+
+setProductos
+
+
+eventualmente conviene moverla a:
+useProductos()
+Ejemplo:
+const {  productos,  loading,  error,  crearProducto,  eliminarProducto} = useProductos();
+Eso desacopla MUCHO la UI de la lógica.
+
+4. pages/
+Cuando metas Router:
+/products/products/new/products/:id
+las páginas van acá.
+No metas lógica de rutas dentro de componentes chicos.
+
+5. FormularioProducto
+Acá ya hiciste algo MUY importante correctamente:
+Separaste:
+
+
+componente presentacional
+
+
+componente contenedor
+
+
+Eso está bien diseñado.
+FormularioProducto↓solo UI
+FormularioContainer↓estado + lógica
+Eso ya es arquitectura React real.
+
+6. Qué NO conviene todavía
+NO haría todavía:
+
+
+Redux
+
+
+Context API gigante
+
+
+Zustand
+
+
+TypeScript
+
+
+carpeta store
+
+
+arquitectura enterprise
+
+
+porque tu proyecto todavía está creciendo.
+Primero:
+
+
+Router
+
+
+CRUD completo
+
+
+separar services
+
+
+separar utils
+
+
+Eso ya te deja MUY bien parado.
+
+7. Lo primero que yo movería YA
+Primero extraería:
+A
+services/productosService.js
+B
+utils/imagenes.js
+Porque son las dos cosas más mezcladas dentro del componente.
+
+8. Cómo quedaría ItemListContainer después
+Pasaría de monstruo gigante a esto:
+useEffect(() => {  const cargar = async () => {    try {      setLoading(true);      const data = await obtenerProductos();      const conFotos = data.map((p, i) => ({        ...p,        imagen: generarImagen(p.categoria, i),      }));      setProductos(conFotos);    } catch (err) {      setError(err.message);    } finally {      setLoading(false);    }  };  cargar();}, []);
+MUCHO más limpio.
+
+9. Tu arquitectura actual
+Tu arquitectura ahora mismo es:
+componente gigante multifunción
+La siguiente evolución natural es:
+UI↓hooks↓services↓API
+Eso ya es una estructura seria para React moderno.
+
+
+ <a href="/" className={styles.link}>Inicio</a>
+      <a href="/productos" className={styles.link}>Productos</a>
+      <a href="/contacto" className={styles.link}>Contacto</a>
+      <a href="/carrito" className={styles.link}>Carrito</a>
+
+Sí: esa propuesta está bien pensada porque no rompe tu arquitectura actual, mantiene Item → ItemListContainer → stock local, y solo agrega una segunda responsabilidad: enviar la compra al carrito global con Context API.
+
+Eso es mucho mejor que reescribir todo.
+
+La idea correcta sería:
+
+Item sigue casi igual
+ItemListContainer sigue controlando stock visual
+CartContext maneja carrito global
+App envuelve todo con CartProvider
+
+Ese enfoque es sólido para entregar al profesor porque muestra:
+
+props
+callbacks
+closures
+state local
+Context API
+arquitectura escalonada
+
+Eso suma bastante.
+
+Qué modificar realmente
+1. Crear CartContext.jsx
+
+Dentro de:
+
+src/context/CartContext.jsx
+
+ponés:
+
+import { createContext, useState } from "react";
+
+export const CartContext = createContext();
+
+export function CartProvider({ children }) {
+  const [carrito, setCarrito] = useState([]);
+
+  const agregarAlCarrito = (producto, cantidad) => {
+    setCarrito((prev) => {
+      const existe = prev.find((item) => item.id === producto.id);
+
+      if (existe) {
+        return prev.map((item) =>
+          item.id === producto.id
+            ? {
+                ...item,
+                cantidad: item.cantidad + cantidad,
+              }
+            : item
+        );
+      }
+
+      return [
+        ...prev,
+        {
+          ...producto,
+          cantidad,
+        },
+      ];
+    });
+  };
+
+  return (
+    <CartContext.Provider
+      value={{
+        carrito,
+        agregarAlCarrito,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
+}
+2. Modificar App.jsx
+
+Acá sí:
+
+import { Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout/Layout";
+import ItemListContainer from "./components/ItemListContainer/ItemListContainer";
+import { ChatIA } from "./components/ChatIA/ChatIA";
+import { FormularioContainer } from "./components/AltaProducto/alta";
+import ProductoDetalle from "./components/ProductoDetalle";
+import { CartProvider } from "./context/CartContext";
+
+function App() {
+  return (
+    <CartProvider>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route
+            path="/"
+            element={
+              <ItemListContainer
+                mensaje="🏪 Tienda Virtual - Productos Disponibles"
+              />
+            }
+          />
+
+          <Route path="/chat" element={<ChatIA />} />
+          <Route path="/alta" element={<FormularioContainer />} />
+          <Route path="/producto/:id" element={<ProductoDetalle />} />
+        </Route>
+      </Routes>
+    </CartProvider>
+  );
+}
+
+export default App;
+3. Modificar ItemListContainer
+
+Agregar:
+
+import { useContext } from "react";
+import { CartContext } from "../../context/CartContext";
+
+y dentro:
+
+const { agregarAlCarrito } = useContext(CartContext);
+4. Reemplazar crearCallbackCompra
+
+por esta versión:
+
+const crearCallbackCompra = (productoId) => {
+  return (cantidad) => {
+    const productoComprado = productos.find(
+      (p) => p.id === productoId
+    );
+
+    if (productoComprado) {
+      agregarAlCarrito(productoComprado, cantidad);
+    }
+
+    setProductos((productosActuales) =>
+      productosActuales.map((p) =>
+        p.id === productoId
+          ? { ...p, stock: p.stock - cantidad }
+          : p
+      )
+    );
+  };
+};
+5. Item.jsx
+
+NO hace falta tocar casi nada.
+
+Está perfecto así.
+
+Eso está muy bien.
+
+Mi recomendación real
+
+No agregues:
+
+reducers
+Redux
+Zustand
+localStorage
+persistencia compleja
+
+porque para entrega académica:
+
+Context API simple > arquitectura sobredimensionada
+
+Tu enfoque actual está mejor.
+
+Mi consejo importante
+
+Después agregá un:
+
+CarritoWidget.jsx
+
+arriba en Navbar mostrando:
+
+🛒 4 productos
+
+leyendo desde Context.
+
+Eso hace que el profesor vea inmediatamente que entendiste Context API.
+
+Eso vale muchísimo.
+
+ ─────────────────────────────────────────────────────────────// CartContext.jsx// CONTEXTO GLOBAL DEL CARRITO// ─────────────────────────────────────────────────────────────import { createContext, useState } from "react";/*createContext() crea el "canal" de comunicación global.Pensalo así:CartContext = la tuberíaTodavía NO tiene datos.Solo crea el contexto para que luego el Providerpueda compartir información.*/export const CartContext = createContext();/*CartProvider = componente que envuelve parte de la appy comparte información con todos sus hijos.Ejemplo:<CartProvider>   <App /></CartProvider>Todo lo que esté dentro podrá acceder al carrito.*/export function CartProvider({ children }) {  /*  carrito = estado global del carrito  Ejemplo:  [    {      id: 1,      nombre: "Teclado",      precio: 80,      cantidad: 2    }  ]  */  const [carrito, setCarrito] = useState([]);  /*  agregarAlCarrito(producto, cantidad)  Esta función:  - recibe un producto  - recibe cuántas unidades quiere el usuario  - actualiza el carrito global  */  const agregarAlCarrito = (producto, cantidad) => {    /*    Usamos forma funcional porque depende    del estado anterior del carrito.    prev = estado REAL más reciente    que React inyecta automáticamente    */    setCarrito((prev) => {      /*      Buscamos si ese producto ya existe      dentro del carrito      */      const existe = prev.find(        (item) => item.id === producto.id      );      /*      Si ya existe:      NO agregamos otro objeto nuevo      Solo aumentamos la cantidad      */      if (existe) {        return prev.map((item) =>          item.id === producto.id            ? {                ...item,                cantidad: item.cantidad + cantidad,              }            : item        );      }      /*      Si NO existe:      agregamos un nuevo producto      al array del carrito      */      return [        ...prev,        {          ...producto,          cantidad,        },      ];    });  };  /*  ESTA PARTE ES LA MÁS IMPORTANTE:  <CartContext.Provider>  significa:  "voy a compartir estos valores   con todos los componentes hijos"  value={{    carrito,    agregarAlCarrito  }}  significa:  todos los hijos podrán usar:  - carrito  - agregarAlCarrito()  mediante:  const { carrito, agregarAlCarrito }    = useContext(CartContext)  {children}  significa:  renderizá todo lo que esté dentro  del CartProvider  Ejemplo:  <CartProvider>     <App />  </CartProvider>  acá:  children === <App />  */  return (    <CartContext.Provider      value={{        carrito,        agregarAlCarrito,      }}    >      {children}    </CartContext.Provider>  );}
+
+// ─────────────────────────────────────────────────────────────// ItemListContainer.jsx// SOLO LA PARTE DE crearCallbackCompra()// con carrito + stock local// ─────────────────────────────────────────────────────────────/*Consumimos el contexto.Esto significa:"andá al CartProvider y traeme agregarAlCarrito"useContext = hook que lee contexto*/const { agregarAlCarrito } = useContext(CartContext);/*Función que genera el callback de comprapara cada producto.En lugar de pasar una función genérica,creamos una personalizada para cada Item.Esto se llama closure:la función recuerda productoIdaunque se ejecute más tarde.*/const crearCallbackCompra = (productoId) => {  /*  Esta función interna se ejecuta  cuando el usuario hace click en Comprar  cantidad = cuántas unidades eligió  */  return (cantidad) => {    /*    PRIMERA ACCIÓN:    buscar el producto completo    productos.find() SOLO LEE    No modifica estado.    Por eso acá sí podemos usar    "productos" directamente.    No hay problema de stale closure    porque no estamos actualizando nada.    */    const productoComprado = productos.find(      (p) => p.id === productoId    );    /*    Si encontramos el producto,    lo agregamos al carrito global    */    if (productoComprado) {      agregarAlCarrito(        productoComprado,        cantidad      );    }    /*    SEGUNDA ACCIÓN:    actualizar el stock visual local    Acá SÍ modificamos estado,    por eso usamos forma funcional.    NO hacemos esto:    setProductos(productos.map(...))    porque "productos" podría estar viejo.    Mejor:    setProductos((productosActuales) => ...)    React inyecta automáticamente    el valor más reciente.    */    setProductos((productosActuales) =>      /*      Recorremos todos los productos      */      productosActuales.map((p) =>        /*        Si es el producto comprado:        devolvemos un objeto NUEVO        con el stock reducido        React detecta el cambio        por referencia        */        p.id === productoId          ? {              ...p,              stock: p.stock - cantidad,            }          /*          Si NO es ese producto:          devolvemos el mismo objeto          sin modificar          */          : p      )    );  };};

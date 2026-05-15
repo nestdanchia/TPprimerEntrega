@@ -1,0 +1,12 @@
+/* =========================================================
+   FOOTER
+   Barra inferior en turquesa claro con texto negro.
+   ========================================================= */
+
+.footer {
+  background-color: #8de2d6;  /* turquesa claro — color fijo, no variable */
+  color: black;
+  text-align: center;
+  padding: 1rem;
+  margin-top: 2rem;
+}
