@@ -10,6 +10,7 @@
 
 Para usar la aplicacion solo hace falta abrir el Frontend en el navegador. No se requiere instalacion.
 
+Esta aplicacion integra un asistente de inteligencia artificial accesible desde la ruta /chat (menu "Chat IA"). El asistente responde consultas sobre productos, hace recomendaciones segun el uso que le quiera dar el usuario y puede capturar datos de contacto para concretar una compra. La IA corre en un servidor backend propio (Node.js + Express desplegado en Render) que se comunica con la API de OpenRouter. 
 ---
 
 ## Sistema de fallback
