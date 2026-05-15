@@ -1,13 +1,9 @@
 import "./alta.css";
 
-// ─── FormularioProducto ───────────────────────────────────────────────────────
-// Componente hijo PRESENTACIONAL — solo renderiza el formulario.
-//
-// Responsabilidad única: mostrar los campos y avisar al padre cuando algo cambia.
-// No sabe nada de fetch, estado global ni lógica de negocio.
-//
-// FLUJO DE BAJADA:  padre (AltaProducto) → hijo via props (datosForm)
-// FLUJO DE SUBIDA:  hijo → padre via callbacks (manejarCambio, manejarEnvio)
+// Componente hijo presentacional — solo renderiza el formulario.
+// No tiene logica ni estado propio. Recibe datos y callbacks del padre.
+// Flujo de bajada: padre -> hijo via datosForm.
+// Flujo de subida: hijo -> padre via manejarCambio y manejarEnvio.
 function FormularioProducto({ datosForm, manejarCambio, manejarEnvio }) {
   return (
     <div className="card">
@@ -15,26 +11,18 @@ function FormularioProducto({ datosForm, manejarCambio, manejarEnvio }) {
 
       <form onSubmit={manejarEnvio}>
 
-        {/* ── Nombre ── */}
         <div className="campo">
           <label className="label">Nombre del Producto</label>
-          {/*
-            name="nombre" es la clave del patrón de formulario unificado:
-            cuando el usuario escribe, onChange dispara manejarCambio,
-            que usa evento.target.name para saber qué propiedad del estado actualizar.
-            Así una sola función maneja todos los campos.
-          */}
           <input
             className="input"
             type="text"
             name="nombre"
-            placeholder="Ej: Teclado Mecánico"
+            placeholder="Ej: Teclado Mecanico"
             value={datosForm.nombre}
             onChange={manejarCambio}
           />
         </div>
 
-        {/* ── Stock ── */}
         <div className="campo">
           <label className="label">Stock</label>
           <input
@@ -47,7 +35,6 @@ function FormularioProducto({ datosForm, manejarCambio, manejarEnvio }) {
           />
         </div>
 
-        {/* ── Precio ── */}
         <div className="campo">
           <label className="label">Precio ($)</label>
           <input
@@ -60,13 +47,9 @@ function FormularioProducto({ datosForm, manejarCambio, manejarEnvio }) {
           />
         </div>
 
-        {/* ── Categoría ── */}
         <div className="campo">
-          <label className="label">Categoría</label>
-          {/*
-            El select también usa name="categoria" y el mismo manejarCambio.
-            evento.target.value devuelve el value de la option seleccionada.
-          */}
+          <label className="label">Categoria</label>
+          {/* El select usa el mismo manejarCambio que los inputs via name="categoria" */}
           <select
             className="select"
             name="categoria"
@@ -74,17 +57,17 @@ function FormularioProducto({ datosForm, manejarCambio, manejarEnvio }) {
             onChange={manejarCambio}
           >
             <option value="">Seleccionar...</option>
-            <option value="computacion">Computación</option>
+            <option value="computacion">Computacion</option>
             <option value="accesorios">Accesorios</option>
             <option value="audio">Audio</option>
-            <option value="moviles">Móviles</option>
+            <option value="moviles">Moviles</option>
             <option value="almacenamiento">Almacenamiento</option>
             <option value="componentes">Componentes</option>
             <option value="redes">Redes</option>
             <option value="muebles">Muebles</option>
             <option value="gaming">Gaming</option>
             <option value="streaming">Streaming</option>
-            <option value="fotografia">Fotografía</option>
+            <option value="fotografia">Fotografia</option>
             <option value="drones">Drones</option>
             <option value="wearables">Wearables</option>
             <option value="video">Video</option>
