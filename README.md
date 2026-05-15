@@ -18,7 +18,7 @@ La aplicacion esta disenada para funcionar incluso sin conexion a internet compl
 
 Carga de productos: el origen principal es MockAPI (base de datos REST en la nube). Si MockAPI no responde, la aplicacion carga automaticamente un archivo JSON local incluido en el proyecto (public/data/productos.json), sin mostrar ningun error al usuario.
 
-Imagenes: cuando los productos vienen de MockAPI, las imagenes se cargan desde Pexels segun la categoria del producto. Si se activa el fallback al JSON local, las imagenes tambien son locales (archivos carrito1.png a carrito15.png incluidos en el proyecto). Ademas, si una imagen de Pexels falla individualmente al cargar, el componente Item la reemplaza en ese momento por una imagen local aleatoria de las mismas 15 disponibles localmente definidas en ITem
+Imagenes: cuando los productos vienen de MockAPI, las imagenes se cargan desde Pexels segun la categoria del producto. Si se activa el fallback al JSON local, las imagenes tambien son locales (archivos carrito1.png a carrito15.png incluidos en el proyecto). Ademas, si una imagen de Pexels falla individualmente al cargar, el componente Item la reemplaza en ese momento por una imagen local aleatoria de las mismas 15 disponibles.
 
 En ningun caso la aplicacion queda sin productos ni sin imagenes.
 
