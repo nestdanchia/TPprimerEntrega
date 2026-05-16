@@ -14,12 +14,11 @@ import { obtenerProductos } from "./cargaProductos";
 // agregarAlCarrito(), Carrito lee del mismo contexto. CartProvider (en App.jsx)
 // mantiene el estado vivo mientras el usuario navega entre paginas.
 export function CatalogoProductos({ mensaje }) {
-  const [productos, setProductos]  = useState([]);
-  const [loading, setLoading]      = useState(true);
-  const [error, setError]          = useState(null);
-  const [historial, _setHistorial] = useState([]);
+  const [productos, setProductos]       = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(null);
 
-  const { agregarAlCarrito } = useContext(CartContext);
+  const { agregarAlCarrito, totalUnidades } = useContext(CartContext);
 
   // Carga inicial — se ejecuta una sola vez al montar el componente.
   useEffect(() => {
@@ -101,8 +100,9 @@ export function CatalogoProductos({ mensaje }) {
         <h1>{mensaje || "Tienda Virtual"}</h1>
 
         <div className={styles.stats}>
-          <span className={styles.stat}>{productos.length} productos</span>
-          <span className={styles.stat}>{historial.length} compras</span>
+          <span className={styles.stat}>{productos.length} Productos</span>
+         <span className={styles.stat}>{totalUnidades} Unidades Compradas Hoy </span>
+
         </div>
 
         <div>
@@ -138,25 +138,7 @@ export function CatalogoProductos({ mensaje }) {
         </main>
       )}
 
-      {historial.length > 0 && (
-        <section className={styles.historial}>
-          <h2>Historial de Compras</h2>
-          <div className={styles.historialList}>
-            {historial.slice(0, 5).map((entrada) => (
-              <div key={entrada.id} className={styles.historialItem}>
-                <div className={styles.historialInfo}>
-                  <strong>{entrada.producto}</strong>
-                  <span>{entrada.cantidad} x ${entrada.precioUnitario}</span>
-                </div>
-                <div className={styles.historialTotal}>
-                  <strong>${entrada.total}</strong>
-                  <small>{entrada.timestamp}</small>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      
 
     </div>
   );

@@ -5,6 +5,7 @@ import { CartContext } from "./CartContext";
 // con todos los componentes hijos via CartContext.Provider.
 export function CartProvider({ children }) {
   const [carrito, setCarrito] = useState([]);
+  const [totalUnidades, setTotalUnidades] = useState(0);
 
   // Agrega un producto al carrito. Si ya existe, suma la cantidad.
   const agregarAlCarrito = (producto, cantidad) => {
@@ -21,6 +22,7 @@ export function CartProvider({ children }) {
 
       return [...prev, { ...producto, cantidad }];
     });
+    setTotalUnidades((prev) => prev + cantidad);
   };
 
   // Resetea el carrito a vacio. Se llama al finalizar la compra.
@@ -29,7 +31,7 @@ export function CartProvider({ children }) {
   };
 
   return (
-    <CartContext.Provider value={{ carrito, agregarAlCarrito, vaciarCarrito }}>
+    <CartContext.Provider value={{ carrito, agregarAlCarrito, vaciarCarrito, totalUnidades  }}>
       {children}
     </CartContext.Provider>
   );
