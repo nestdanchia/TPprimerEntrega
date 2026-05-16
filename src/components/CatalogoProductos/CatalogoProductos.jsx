@@ -5,14 +5,31 @@ import { Item } from "../Item/Item";
 import styles from "./CatalogoProductos.module.css";
 import { CartContext } from "../../context/CartContext";
 import { obtenerProductos } from "./cargaProductos";
+/*
+Orquestador de la tienda. Carga el catalogo y renderiza la grilla de productos.
+ Delega la carga de datos a cargaProductos — no sabe de fetch ni URLs.
 
-// Orquestador de la tienda. Carga el catalogo y renderiza la grilla de productos.
-// Delega la carga de datos a cargaProductos — no sabe de fetch ni URLs.
-//
-// Comunicacion con Carrito: ambos componentes estan en rutas distintas y nunca
-// se hablan directamente. CatalogoProductos escribe en CartContext via
-// agregarAlCarrito(), Carrito lee del mismo contexto. CartProvider (en App.jsx)
-// mantiene el estado vivo mientras el usuario navega entre paginas.
+Comunicacion con Carrito: ambos componentes estan en rutas distintas y nunca
+ se hablan directamente. CatalogoProductos escribe en CartContext via
+ agregarAlCarrito(), Carrito lee del mismo contexto. CartProvider (en App.jsx)
+ mantiene el estado vivo mientras el usuario navega entre paginas.
+   CatalogoProductos  →  escribe en el contexto via agregarAlCarrito()
+  Carrito            →  lee del contexto via carrito[]
+  El intermediario es CartProvider (en App.jsx), que vive por encima de ambas
+ rutas y mantiene el estado vivo aunque el usuario navegue entre páginas lo use por ejemplo 
+ con el contador de unidades compradas
+ crearCallbackCompra(productoId)  ← CatalogoProductos crea un callback por producto, capturando el id
+  devuelve (cantidad) => { ... } ← esa funcion se pasa a Item como prop onCompra
+
+Item opera con su estado local cantidadSeleccionada (+ / - / Comprar)
+  al hacer click en Comprar llama onCompra(cantidadSeleccionada)
+  Item no sabe el id ni donde va el dato, solo informa cuanto quiere el usuario
+
+El callback recibe la cantidad, busca el producto por el id que ya tenia capturado
+y ejecuta agregarAlCarrito + descuenta stock
+
+*/
+
 export function CatalogoProductos({ mensaje }) {
   const [productos, setProductos]       = useState([]);
   const [loading, setLoading]           = useState(true);
@@ -38,8 +55,18 @@ export function CatalogoProductos({ mensaje }) {
     cargar();
   }, []);
 
-  // Devuelve una funcion de compra especifica para cada producto.
-  // Al ejecutarse: agrega al carrito global y descuenta el stock local.
+  // Patron closure: crearCallbackCompra(id) devuelve una funcion personalizada
+  // para ese producto. El hijo (Item) la recibe como prop onCompra y la llama
+  // con la cantidad cuando el usuario hace clic en "Comprar".
+  //
+  // Hace dos cosas:
+  //   1. Agrega el producto al carrito global (CartContext)
+  //   2. Descuenta el stock en el estado local para actualizar la UI
+  //
+  // El parametro "cantidad" que llega aqui es el valor final confirmado por el usuario.
+  // En Item.jsx ese mismo valor se llama "cantidadSeleccionada" mientras el usuario
+  // usa + / - para elegir. Al hacer click en Comprar, cantidadSeleccionada se pasa
+  // como argumento a onCompra() y llega aqui como "cantidad" — ya es el valor definitivo.
   const crearCallbackCompra = (productoId) => {
     return (cantidad) => {
       const productoComprado = productos.find((p) => p.id === productoId);

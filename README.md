@@ -1,9 +1,9 @@
-# Mi Tienda React - TP Primer Entrega
+ Mi Tienda React - TP Primer Entrega
 
-## Demo en vivo
+# Demo en vivo
 
-| | URL |
-|---|---|
+|  URL |
+|--|--|
 | Frontend | https://t-pprimer-entrega.vercel.app |
 | Backend | https://tpprimerentrega.onrender.com |
 | Repositorio | https://github.com/nestdanchia/TPprimerEntrega |

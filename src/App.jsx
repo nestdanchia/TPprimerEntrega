@@ -7,8 +7,9 @@ import ProductoDetalle from "./components/ProductoDetalle/ProductoDetalle";
 import { CartProvider } from "./context/CartProvider";
 import { Carrito } from "./components/Carrito/Carrito";
 
-// CartProvider envuelve toda la app para que cualquier componente
-// pueda acceder al estado del carrito via useContext(CartContext).
+// CartProvider comparte el estado global del carrito con todos los
+// componentes hijos que consuman CartContext usando useContext().
+
 function App() {
   return (
     <CartProvider>

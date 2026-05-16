@@ -1,21 +1,29 @@
 import { useState } from "react";
 import styles from "./Item.module.css";
 import { Link } from "react-router-dom";
+
 export function Item({ id,nombre, precio, stock, imagen, onCompra }) {
-  const [cantidad, setCantidad] = useState(0);
+  // cantidadSeleccionada: estado local de este componente.
+  // Representa cuantas unidades el usuario eligio con + / - antes de confirmar.
+  // No es la cantidad que va al carrito todavia — es el selector previo al click en Comprar.
+  // Distinto de "cantidad" en CartProvider, que es la cantidad ya confirmada dentro del carrito.
+  const [cantidadSeleccionada, setCantidadSeleccionada] = useState(0);
 
   const sumar = () => {
-    if (cantidad < stock) setCantidad((c) => c + 1);
+    if (cantidadSeleccionada < stock) setCantidadSeleccionada((c) => c + 1);
   };
 
   const restar = () => {
-    if (cantidad > 0) setCantidad((c) => c - 1);
+    if (cantidadSeleccionada > 0) setCantidadSeleccionada((c) => c - 1);
   };
 
   const comprar = () => {
-    if (cantidad === 0) return;
-    onCompra(cantidad);
-    setCantidad(0);
+    if (cantidadSeleccionada === 0) return;
+    // onCompra es el callback creado por crearCallbackCompra(productoId) en CatalogoProductos.
+    // Item no sabe el id del producto ni a donde va el dato.
+    // Solo informa cuantas unidades quiere el usuario — el padre ya tiene el id capturado en el closure.
+    onCompra(cantidadSeleccionada);
+    setCantidadSeleccionada(0);
   };
 
   return (
@@ -66,15 +74,15 @@ export function Item({ id,nombre, precio, stock, imagen, onCompra }) {
         <button
           className={styles.quantityButton}
           onClick={restar}
-          disabled={cantidad === 0}
+          disabled={cantidadSeleccionada === 0}
         >
           -
         </button>
-        <span className={styles.quantity}>{cantidad}</span>
+        <span className={styles.quantity}>{cantidadSeleccionada}</span>
         <button
           className={styles.quantityButton}
           onClick={sumar}
-          disabled={cantidad >= stock}
+          disabled={cantidadSeleccionada >= stock}
         >
           +
         </button>
@@ -82,8 +90,8 @@ export function Item({ id,nombre, precio, stock, imagen, onCompra }) {
 
       <button
         onClick={comprar}
-        disabled={cantidad === 0}
-        className={cantidad === 0 ? styles.buttonDisabled : styles.buttonActive}
+        disabled={cantidadSeleccionada === 0}
+        className={cantidadSeleccionada === 0 ? styles.buttonDisabled : styles.buttonActive}
       >
         Comprar
       </button>

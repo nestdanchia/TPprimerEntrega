@@ -2,7 +2,8 @@ import Header from "./Header";
 import Footer from "./Footer";
 import styles from "./Layout.module.css";
 import { Outlet } from "react-router-dom";
-
+// <Outlet /> es el lugar donde React Router renderiza
+// la ruta hija que esté activa en ese momento.
 function Layout() {
   return (
     <div className={styles.layout}>

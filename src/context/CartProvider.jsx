@@ -22,6 +22,7 @@ export function CartProvider({ children }) {
 
       return [...prev, { ...producto, cantidad }];
     });
+    // actualizamos el contadr de unidades que luego consumira CatalogoProductos
     setTotalUnidades((prev) => prev + cantidad);
   };
 
