@@ -9,18 +9,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Variables de entorno (desde .env en local o Render en producción)
+// =========================
+// Variables de entorno
+// =========================
+
 const GROQ_KEY = process.env.GROQ_API_KEY;
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
+// Modelos recomendados (actuales y válidos)
+const GROQ_MODEL = "llama-3.1-8b-instant";
+const OPENROUTER_MODEL = "meta-llama/llama-3.1-8b-instruct";
+
 console.log("GROQ_KEY length:", GROQ_KEY?.length);
 console.log("OPENROUTER_KEY length:", OPENROUTER_KEY?.length);
 
-// Body común para ambos proveedores
-function buildBody(mensaje) {
+// =========================
+// Body dinámico según proveedor
+// =========================
+
+function buildBody(mensaje, model) {
   return JSON.stringify({
-    model: "llama3-8b-8192",
+    model,
     messages: [
       {
         role: "system",
@@ -35,7 +45,10 @@ function buildBody(mensaje) {
   });
 }
 
+// =========================
 // Endpoint principal
+// =========================
+
 app.post("/chat", async (req, res) => {
   const { mensaje } = req.body;
 
@@ -48,6 +61,7 @@ app.post("/chat", async (req, res) => {
   // =========================
   // Intento 1 → GROQ
   // =========================
+
   try {
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
@@ -57,7 +71,7 @@ app.post("/chat", async (req, res) => {
           Authorization: `Bearer ${GROQ_KEY}`,
           "Content-Type": "application/json",
         },
-        body: buildBody(mensaje),
+        body: buildBody(mensaje, GROQ_MODEL),
       }
     );
 
@@ -65,12 +79,13 @@ app.post("/chat", async (req, res) => {
 
     if (data.choices?.[0]?.message?.content) {
       console.log("Respuesta vía Groq");
+
       return res.json({
         texto: data.choices[0].message.content,
       });
     }
 
-    console.warn("Groq falló:", data.error?.message);
+    console.warn("Groq falló:", data.error?.message || "Sin detalle");
   } catch (error) {
     console.warn("Groq no disponible:", error.message);
   }
@@ -78,6 +93,7 @@ app.post("/chat", async (req, res) => {
   // =========================
   // Intento 2 → OpenRouter
   // =========================
+
   try {
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
@@ -89,7 +105,7 @@ app.post("/chat", async (req, res) => {
           "HTTP-Referer": CLIENT_URL,
           "X-Title": "Chat Laptop Store",
         },
-        body: buildBody(mensaje),
+        body: buildBody(mensaje, OPENROUTER_MODEL),
       }
     );
 
@@ -112,21 +128,10 @@ app.post("/chat", async (req, res) => {
   }
 });
 
+// =========================
+// Inicio del servidor
+// =========================
+
 app.listen(3001, () => {
   console.log("Servidor corriendo en http://localhost:3001");
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
