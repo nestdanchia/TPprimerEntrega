@@ -13,6 +13,10 @@ app.use(express.json());
 // NUNCA hardcodear la clave acá ni subirla al repo.
 const API_KEY = process.env.OPENROUTER_API_KEY;
 
+// diagnostico temporal — ver en logs de Render
+console.log("KEY length:", API_KEY?.length);
+console.log("KEY starts:", API_KEY?.substring(0, 10));
+
 app.post("/chat", async (req, res) => {
   const { mensaje } = req.body;
 
