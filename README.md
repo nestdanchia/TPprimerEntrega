@@ -3,10 +3,16 @@
 # Demo en vivo
 
 |  URL |
-|--|--|
-| Frontend | https://t-pprimer-entrega.vercel.app |
-| Backend | https://tpprimerentrega.onrender.com |
+Frontend:
+https://t-pprimer-entrega.vercel.app
+
+Backend:
+https://tpprimerentrega.onrender.com
+
+
 | Repositorio | https://github.com/nestdanchia/TPprimerEntrega |
+
+
 
 Para usar la aplicacion solo hace falta abrir el Frontend en el navegador. No se requiere instalacion.
 
